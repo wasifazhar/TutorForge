@@ -100,8 +100,12 @@ def generate_quiz(client, model, subject, topic, difficulty, num_questions, q_ty
     return extract_json(response.choices[0].message.content)
 
 
-def generate_quiz_from_content(client, model, content, difficulty, num_questions, q_type):
-    """Same as generate_quiz, but grounded in the text extracted from an uploaded PDF."""
+def generate_quiz_from_content(client, model, content, difficulty, num_questions, q_type, topic=""):
+    """Same as generate_quiz, but grounded in the text extracted from an uploaded PDF.
+
+    If `topic` is provided, questions are narrowed to that topic as covered in the PDF;
+    otherwise questions are drawn from the material as a whole.
+    """
     system_prompt = (
         "You are an expert tutor who writes precise, exam-quality quiz questions "
         "strictly based on the study material provided by the user. Only use facts, "
@@ -123,11 +127,24 @@ def generate_quiz_from_content(client, model, content, difficulty, num_questions
         )
 
     truncated = content[:MAX_PDF_CHARS]
+
+    if topic.strip():
+        focus_instruction = (
+            f"Based ONLY on the material above, create {num_questions} {difficulty.lower()}-level "
+            f"{q_type.lower()} questions that focus specifically on the topic '{topic.strip()}' "
+            f"as it is covered in this material. If the material does not cover this topic in "
+            f"enough depth, draw as closely as possible on whatever related content is present."
+        )
+    else:
+        focus_instruction = (
+            f"Based ONLY on the material above, create {num_questions} {difficulty.lower()}-level "
+            f"{q_type.lower()} questions that test understanding of it."
+        )
+
     user_prompt = (
         f"Here is study material extracted from a PDF:\n\n"
         f"---\n{truncated}\n---\n\n"
-        f"Based ONLY on the material above, create {num_questions} {difficulty.lower()}-level "
-        f"{q_type.lower()} questions that test understanding of it. "
+        f"{focus_instruction} "
         f"{format_instruction}"
     )
 
@@ -213,6 +230,11 @@ def quiz_tab(client, model):
             else:
                 st.warning("No selectable text found in this PDF (it may be a scanned image).")
 
+        pdf_topic = st.text_input(
+            "Focus topic (optional — leave blank to cover the whole PDF)",
+            key="quiz_pdf_topic",
+        )
+
     if st.button("Generate Quiz", type="primary", icon=":material/bolt:"):
         if not client:
             st.error("Groq API key not configured. See the setup instructions in the README.")
@@ -229,7 +251,8 @@ def quiz_tab(client, model):
                         quiz_data = generate_quiz(client, model, subject, topic, difficulty, num_questions, q_type)
                     else:
                         quiz_data = generate_quiz_from_content(
-                            client, model, st.session_state.quiz_pdf_text, difficulty, num_questions, q_type
+                            client, model, st.session_state.quiz_pdf_text, difficulty, num_questions, q_type,
+                            topic=pdf_topic,
                         )
                     reset_quiz_state()
                     st.session_state.update({
