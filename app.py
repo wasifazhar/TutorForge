@@ -239,7 +239,7 @@ def revision_tab(client, model):
 
 def main():
     st.title(":material/school: TutorForge")
-    st.caption("Built for Preply tutoring — generate quizzes and revision guides on demand, powered by Groq.")
+    st.caption("Built to generate quizzes and revision guides on demand. Developed By Wasif Azhar")
 
     with st.sidebar:
         st.header(":material/settings: Settings")
