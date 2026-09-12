@@ -6,10 +6,7 @@ import os
 
 st.set_page_config(page_title="TutorForge", page_icon=":material/school:", layout="centered")
 
-MODEL_OPTIONS = {
-    "GPT-OSS 120B (higher quality)": "openai/gpt-oss-120b",
-    "GPT-OSS 20B (faster)": "openai/gpt-oss-20b",
-}
+GROQ_MODEL = "openai/gpt-oss-20b"
 
 SUBJECTS = [
     "Python", "C++", "JavaScript", "Object-Oriented Programming",
@@ -242,14 +239,14 @@ def revision_tab(client, model):
 
 def main():
     st.title(":material/school: TutorForge")
-    st.caption("Built to generate quizzes and revision guides on demand by Wasif Azhar.")
+    st.caption("Built for Preply tutoring — generate quizzes and revision guides on demand, powered by Groq.")
 
     with st.sidebar:
         st.header(":material/settings: Settings")
-        model_label = st.selectbox("Model", list(MODEL_OPTIONS.keys()))
-        model = MODEL_OPTIONS[model_label]
+        st.caption(f"Model: `{GROQ_MODEL}`")
 
     client = get_client()
+    model = GROQ_MODEL
     if not client:
         st.warning(
             "No Groq API key found. Set the `GROQ_API_KEY` environment variable "
