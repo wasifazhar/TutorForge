@@ -98,7 +98,7 @@ def generate_revision_guide(client, model, subject, topic, difficulty):
 
 
 def reset_quiz_state():
-    for key in ["quiz_data", "current_q", "score", "answers", "submitted"]:
+    for key in ["quiz_data", "active_quiz_type", "current_q", "score", "answers", "submitted"]:
         st.session_state.pop(key, None)
 
 
@@ -109,7 +109,7 @@ def quiz_tab(client, model):
         subject = st.selectbox("Subject", SUBJECTS, key="quiz_subject")
         difficulty = st.selectbox("Difficulty", DIFFICULTIES, key="quiz_difficulty")
     with col2:
-        q_type = st.selectbox("Question Type", ["Multiple Choice", "Short Answer / Coding"], key="quiz_type")
+        q_type = st.selectbox("Question Type", ["Multiple Choice", "Short Answer / Coding"], key="quiz_type_select")
         num_questions = st.slider("Number of Questions", 3, 15, 5, key="quiz_num")
 
     topic = st.text_input("Specific Topic (e.g. 'recursion', 'JOINs', 'binary search trees')", key="quiz_topic")
@@ -124,12 +124,14 @@ def quiz_tab(client, model):
                 try:
                     quiz_data = generate_quiz(client, model, subject, topic, difficulty, num_questions, q_type)
                     reset_quiz_state()
-                    st.session_state.quiz_data = quiz_data
-                    st.session_state.quiz_type = q_type
-                    st.session_state.current_q = 0
-                    st.session_state.score = 0
-                    st.session_state.answers = {}
-                    st.session_state.submitted = False
+                    st.session_state.update({
+                        "quiz_data": quiz_data,
+                        "active_quiz_type": q_type,
+                        "current_q": 0,
+                        "score": 0,
+                        "answers": {},
+                        "submitted": False,
+                    })
                 except Exception as e:
                     st.error(f"Failed to generate quiz: {e}")
 
@@ -140,7 +142,7 @@ def quiz_tab(client, model):
 
 def render_quiz():
     quiz_data = st.session_state.quiz_data
-    q_type = st.session_state.quiz_type
+    q_type = st.session_state.active_quiz_type
     total = len(quiz_data)
 
     if st.session_state.submitted:
