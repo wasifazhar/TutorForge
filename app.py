@@ -14,14 +14,26 @@ MODEL_OPTIONS = {
 SUBJECTS = [
     "Python", "C++", "JavaScript", "Object-Oriented Programming",
     "Data Structures & Algorithms", "SQL", "GCSE Computer Science",
-    "IB Computer Science", "AP Computer Science"
+    "IB Computer Science", "AP Computer Science", "Custom..."
 ]
 
 DIFFICULTIES = ["Beginner", "Intermediate", "Advanced"]
 
 
+def subject_picker(key_prefix):
+    subject_choice = st.selectbox("Subject", SUBJECTS, key=f"{key_prefix}_subject")
+    if subject_choice == "Custom...":
+        return st.text_input("Enter custom subject", key=f"{key_prefix}_subject_custom")
+    return subject_choice
+
+
 def get_client():
-    api_key = st.session_state.get("api_key") or os.environ.get("GROQ_API_KEY")
+    api_key = os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        try:
+            api_key = st.secrets.get("GROQ_API_KEY")
+        except Exception:
+            api_key = None
     if not api_key:
         return None
     return Groq(api_key=api_key)
@@ -106,7 +118,7 @@ def quiz_tab(client, model):
     st.subheader(":material/quiz: Generate a Quiz")
     col1, col2 = st.columns(2)
     with col1:
-        subject = st.selectbox("Subject", SUBJECTS, key="quiz_subject")
+        subject = subject_picker("quiz")
         difficulty = st.selectbox("Difficulty", DIFFICULTIES, key="quiz_difficulty")
     with col2:
         q_type = st.selectbox("Question Type", ["Multiple Choice", "Short Answer / Coding"], key="quiz_type_select")
@@ -116,7 +128,9 @@ def quiz_tab(client, model):
 
     if st.button("Generate Quiz", type="primary", icon=":material/bolt:"):
         if not client:
-            st.error("Add your Groq API key in the sidebar first.")
+            st.error("Groq API key not configured. See the setup instructions in the README.")
+        elif not subject.strip():
+            st.warning("Please enter a subject.")
         elif not topic.strip():
             st.warning("Please enter a topic.")
         else:
@@ -194,7 +208,7 @@ def revision_tab(client, model):
     st.subheader(":material/menu_book: Generate a Revision Guide")
     col1, col2 = st.columns(2)
     with col1:
-        subject = st.selectbox("Subject", SUBJECTS, key="rev_subject")
+        subject = subject_picker("rev")
     with col2:
         difficulty = st.selectbox("Difficulty", DIFFICULTIES, key="rev_difficulty")
 
@@ -202,7 +216,9 @@ def revision_tab(client, model):
 
     if st.button("Generate Guide", type="primary", icon=":material/auto_awesome:"):
         if not client:
-            st.error("Add your Groq API key in the sidebar first.")
+            st.error("Groq API key not configured. See the setup instructions in the README.")
+        elif not subject.strip():
+            st.warning("Please enter a subject.")
         elif not topic.strip():
             st.warning("Please enter a topic.")
         else:
@@ -230,19 +246,16 @@ def main():
 
     with st.sidebar:
         st.header(":material/settings: Settings")
-        api_key_input = st.text_input(
-            "Groq API Key",
-            type="password",
-            value=st.session_state.get("api_key", ""),
-            help="Get a free key at console.groq.com/keys",
-        )
-        st.session_state.api_key = api_key_input
-        st.caption("Your key is only stored in this session, never sent anywhere else.")
-
         model_label = st.selectbox("Model", list(MODEL_OPTIONS.keys()))
         model = MODEL_OPTIONS[model_label]
 
     client = get_client()
+    if not client:
+        st.warning(
+            "No Groq API key found. Set the `GROQ_API_KEY` environment variable "
+            "(or add it to Streamlit secrets) and restart the app.",
+            icon=":material/key_off:",
+        )
 
     tab1, tab2 = st.tabs([":material/quiz: Quiz Generator", ":material/menu_book: Revision Guide"])
     with tab1:
