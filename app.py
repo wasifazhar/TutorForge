@@ -359,7 +359,7 @@ def revision_tab(client, model):
 
 def main():
     st.title(":material/school: TutorForge")
-    st.caption("Built to generate quizzes and revision guides on demand. Developed By Wasif Azhar. Especially for Rikza✨️.")
+    st.caption("Built to generate quizzes and revision guides on demand. Developed By Wasif Azhar.")
 
     with st.sidebar:
         st.header(":material/settings: Settings")
